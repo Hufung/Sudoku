@@ -2,52 +2,76 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fully Featured Sudoku</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile-Friendly Sudoku</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #74ebd5, #acb6e5);
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 10px;
+            overflow-x: hidden;
         }
 
         h1 {
-            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            font-size: clamp(1.5em, 5vw, 2.5em);
+            margin-bottom: 15px;
         }
 
         #sudoku-grid {
             display: grid;
-            grid-template-columns: repeat(9, 40px);
-            grid-gap: 1px;
-            background-color: #000;
-            padding: 1px;
-            margin: 20px;
+            grid-template-columns: repeat(9, minmax(30px, 50px));
+            grid-gap: 2px;
+            background-color: #333;
+            padding: 2px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
         }
 
         .cell {
-            width: 40px;
-            height: 40px;
+            width: 100%;
+            height: 0;
+            padding-bottom: 100%;
             background-color: #fff;
+            border-radius: 5px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 20px;
+            font-size: clamp(16px, 4vw, 20px);
             border: none;
             text-align: center;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .cell:hover {
+            background-color: #f0f0f0;
+            transform: scale(1.05);
         }
 
         .cell.readonly {
-            background-color: #e0e0e0;
+            background-color: #d1e7dd;
+            font-weight: 600;
+            color: #0f5132;
         }
 
         .cell.error {
-            background-color: #ffcccc;
+            background-color: #ffe6e6;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
         }
 
         .cell:nth-child(3n) {
-            border-right: 2px solid #000;
+            border-right: 2px solid #333;
         }
 
         .cell:nth-child(27n + 1),
@@ -59,30 +83,90 @@
         .cell:nth-child(27n + 7),
         .cell:nth-child(27n + 8),
         .cell:nth-child(27n + 9) {
-            border-bottom: 2px solid #000;
+            border-bottom: 2px solid #333;
         }
 
         .controls {
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
-            margin-bottom: 10px;
+            gap: 10px;
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 500px;
         }
 
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            margin: 5px;
+        button, #difficulty {
+            padding: clamp(8px, 2vw, 12px) clamp(15px, 3vw, 20px);
+            font-size: clamp(14px, 3vw, 16px);
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(45deg, #6b48ff, #00ddeb);
+            color: #fff;
             cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            flex: 1 0 auto;
+        }
+
+        button:hover, #difficulty:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
         }
 
         #timer {
-            font-size: 18px;
-            margin-top: 10px;
+            font-size: clamp(16px, 4vw, 20px);
+            color: #fff;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin-top: 15px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            animation: pulse 2s infinite;
         }
 
-        #difficulty {
-            padding: 5px;
-            font-size: 16px;
+        #number-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+            width: 100%;
+            max-width: 500px;
+            display: none;
+        }
+
+        .number-btn {
+            padding: 15px;
+            font-size: 18px;
+            background: #fff;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .number-btn:hover {
+            background: #e0e0e0;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            button, #difficulty {
+                width: 100%;
+                max-width: 300px;
+            }
+            #sudoku-grid {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
@@ -102,17 +186,30 @@
     </div>
     <div id="sudoku-grid"></div>
     <div id="timer">Time: 0:00</div>
+    <div id="number-pad">
+        <button class="number-btn" onclick="inputNumber(1)">1</button>
+        <button class="number-btn" onclick="inputNumber(2)">2</button>
+        <button class="number-btn" onclick="inputNumber(3)">3</button>
+        <button class="number-btn" onclick="inputNumber(4)">4</button>
+        <button class="number-btn" onclick="inputNumber(5)">5</button>
+        <button class="number-btn" onclick="inputNumber(6)">6</button>
+        <button class="number-btn" onclick="inputNumber(7)">7</button>
+        <button class="number-btn" onclick="inputNumber(8)">8</button>
+        <button class="number-btn" onclick="inputNumber(9)">9</button>
+        <button class="number-btn" onclick="inputNumber(0)">Clear</button>
+    </div>
 
     <script>
         const grid = document.getElementById('sudoku-grid');
+        const numberPad = document.getElementById('number-pad');
         let puzzle = Array(9).fill().map(() => Array(9).fill(0));
         let solution = Array(9).fill().map(() => Array(9).fill(0));
         let history = [];
         let redoStack = [];
         let timerInterval;
         let seconds = 0;
+        let selectedCell = null;
 
-        // Initialize the grid
         function createGrid() {
             grid.innerHTML = '';
             for (let i = 0; i < 9; i++) {
@@ -121,14 +218,34 @@
                     cell.classList.add('cell');
                     cell.type = 'text';
                     cell.maxLength = 1;
-                    cell.addEventListener('input', (e) => handleInput(e, i, j));
-                    cell.addEventListener('focus', () => cell.select());
+                    cell.readOnly = true; // Disable direct typing
+                    cell.addEventListener('click', () => selectCell(cell, i, j));
                     grid.appendChild(cell);
                 }
             }
         }
 
-        // Handle user input
+        function selectCell(cell, row, col) {
+            if (solution[row][col] !== 0) return; // Can't edit readonly cells
+            selectedCell = { cell, row, col };
+            numberPad.style.display = 'grid';
+            document.querySelectorAll('.cell').forEach(c => c.style.backgroundColor = c.classList.contains('readonly') ? '#d1e7dd' : '#fff');
+            cell.style.backgroundColor = '#e0f7fa';
+        }
+
+        function inputNumber(num) {
+            if (!selectedCell) return;
+            const { cell, row, col } = selectedCell;
+            history.push({ row, col, value: puzzle[row][col] });
+            redoStack = [];
+            puzzle[row][col] = num;
+            cell.value = num || '';
+            updateGrid();
+            saveGame();
+            numberPad.style.display = 'none';
+            selectedCell = null;
+        }
+
         function handleInput(e, row, col) {
             const value = e.target.value;
             if (value && !/^[1-9]$/.test(value)) {
@@ -142,7 +259,6 @@
             saveGame();
         }
 
-        // Update grid with puzzle values
         function updateGrid() {
             const cells = document.querySelectorAll('.cell');
             cells.forEach((cell, index) => {
@@ -150,7 +266,6 @@
                 const col = index % 9;
                 cell.value = puzzle[row][col] || '';
                 cell.classList.toggle('readonly', solution[row][col] !== 0);
-                cell.readOnly = solution[row][col] !== 0;
                 cell.classList.remove('error');
                 if (puzzle[row][col] && puzzle[row][col] !== solution[row][col]) {
                     cell.classList.add('error');
@@ -158,7 +273,6 @@
             });
         }
 
-        // New Game
         function newGame() {
             const difficulty = document.getElementById('difficulty').value;
             generatePuzzle(difficulty);
@@ -169,9 +283,10 @@
             timerInterval = setInterval(updateTimer, 1000);
             updateGrid();
             saveGame();
+            numberPad.style.display = 'none';
+            selectedCell = null;
         }
 
-        // Generate a new puzzle
         function generatePuzzle(difficulty) {
             solution = generateFullGrid();
             puzzle = solution.map(row => row.slice());
@@ -179,14 +294,12 @@
             removeNumbers(puzzle, cellsToRemove);
         }
 
-        // Generate a full Sudoku grid
         function generateFullGrid() {
             const grid = Array(9).fill().map(() => Array(9).fill(0));
             solveSudoku(grid);
             return grid;
         }
 
-        // Remove numbers from the grid
         function removeNumbers(grid, count) {
             let attempts = count;
             while (attempts > 0) {
@@ -207,7 +320,6 @@
             }
         }
 
-        // Check if the grid has a unique solution
         function hasUniqueSolution(grid) {
             let solutions = 0;
             function countSolutions(board) {
@@ -230,14 +342,13 @@
             return solutions === 1;
         }
 
-        // Solve the puzzle
         function solvePuzzle() {
             puzzle = solution.map(row => row.slice());
             updateGrid();
             clearInterval(timerInterval);
+            numberPad.style.display = 'none';
         }
 
-        // Get a hint
         function getHint() {
             const emptyCells = [];
             for (let i = 0; i < 9; i++) {
@@ -255,7 +366,6 @@
             }
         }
 
-        // Undo last move
         function undo() {
             if (history.length > 0) {
                 const lastMove = history.pop();
@@ -266,7 +376,6 @@
             }
         }
 
-        // Redo last undone move
         function redo() {
             if (redoStack.length > 0) {
                 const nextMove = redoStack.pop();
@@ -277,7 +386,6 @@
             }
         }
 
-        // Timer functions
         function updateTimer() {
             seconds++;
             const minutes = Math.floor(seconds / 60);
@@ -285,7 +393,6 @@
             document.getElementById('timer').textContent = `Time: ${minutes}:${secs < 10 ? '0' : ''}${secs}`;
         }
 
-        // Save game state
         function saveGame() {
             localStorage.setItem('sudokuPuzzle', JSON.stringify(puzzle));
             localStorage.setItem('sudokuSolution', JSON.stringify(solution));
@@ -294,7 +401,6 @@
             localStorage.setItem('sudokuSeconds', seconds);
         }
 
-        // Load game state
         function loadGame() {
             const savedPuzzle = localStorage.getItem('sudokuPuzzle');
             if (savedPuzzle) {
@@ -310,7 +416,6 @@
             }
         }
 
-        // Sudoku solving functions
         function solveSudoku(board) {
             let empty = findEmpty(board);
             if (!empty) return true;
@@ -347,7 +452,6 @@
             return true;
         }
 
-        // Start the game
         createGrid();
         loadGame();
     </script>
