@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Super Mobile-Friendly Sudoku</title>
+    <title>Fixed Mobile Sudoku</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -36,11 +36,12 @@
             border-radius: 10px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
             width: 100%;
-            max-width: 432px; /* 9 * 48px */
+            max-width: 432px;
             margin: 10px auto;
         }
 
         .cell {
+            position: relative;
             width: 100%;
             height: 0;
             padding-bottom: 100%;
@@ -49,11 +50,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: clamp(18px, 4vw, 24px);
+            font-size: clamp(14px, 3.5vw, 20px);
+            line-height: 1; /* Ensure text stays within cell height */
             border: none;
             text-align: center;
             box-sizing: border-box;
             transition: transform 0.1s ease;
+            overflow: hidden; /* Prevent text overflow */
         }
 
         .cell:active {
@@ -176,10 +179,7 @@
             body {
                 padding: 5px;
             }
-            #sudoku-grid {
-                max-width: 360px;
-            }
-            .controls, #number-pad {
+            #sudoku-grid, .controls, #number-pad {
                 max-width: 360px;
             }
         }
@@ -202,7 +202,9 @@
     <div id="sudoku-grid"></div>
     <div id="timer">Time: 0:00</div>
     <div id="number-pad">
-        <button class="number-btn" onclick="inputNumber(1)">1</button>
+        <button class="number-btn" onclick="
+
+inputNumber(1)">1</button>
         <button class="number-btn" onclick="inputNumber(2)">2</button>
         <button class="number-btn" onclick="inputNumber(3)">3</button>
         <button class="number-btn" onclick="inputNumber(4)">4</button>
