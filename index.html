@@ -76,13 +76,11 @@
             box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
         }
 
-        /* Bold lines for every 3rd column (indices 2 and 5) */
         .cell:nth-child(9n + 3),
         .cell:nth-child(9n + 6) {
             border-right: 2px solid #333;
         }
 
-        /* Bold lines for every 3rd row (rows 3 and 6, indices 18-26 and 45-53) */
         .cell:nth-child(n + 19):nth-child(-n + 27),
         .cell:nth-child(n + 46):nth-child(-n + 54) {
             border-bottom: 2px solid #333;
@@ -159,7 +157,7 @@
             cursor: pointer;
             transition: transform 0.1s ease;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            color: #000; /* Black text for visibility */
+            color: #000;
         }
 
         .number-btn:active, .keyboard-btn:active {
@@ -256,6 +254,8 @@
                 for (let j = 0; j < 9; j++) {
                     const cell = document.createElement('div');
                     cell.classList.add('cell');
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
                     cell.addEventListener('click', () => selectCell(cell, i, j));
                     grid.appendChild(cell);
                 }
@@ -270,8 +270,12 @@
         }
 
         function inputNumber(num) {
-            if (!selectedCell) return;
+            if (!selectedCell) {
+                console.log("No cell selected");
+                return;
+            }
             const { cell, row, col } = selectedCell;
+            console.log(`Inputting ${num} at row ${row}, col ${col}`);
             history.push({ row, col, value: puzzle[row][col] });
             redoStack = [];
             puzzle[row][col] = num;
@@ -284,15 +288,14 @@
         function updateGrid() {
             const cells = document.querySelectorAll('.cell');
             cells.forEach((cell, index) => {
-                const row = Math.floor(index / 9);
-                const col = index % 9;
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
                 cell.textContent = puzzle[row][col] || '';
                 cell.classList.toggle('readonly', solution[row][col] !== 0);
                 cell.classList.remove('error');
                 if (puzzle[row][col] && puzzle[row][col] !== solution[row][col]) {
                     cell.classList.add('error');
                 }
-                // Only highlight if it's the selected cell
                 cell.style.backgroundColor = cell === selectedCell?.cell ? '#e0f7fa' : (cell.classList.contains('readonly') ? '#d1e7dd' : '#fff');
             });
         }
@@ -407,7 +410,7 @@
         function redo() {
             if (redoStack.length > 0) {
                 const nextMove = redoStack.pop();
-                history.push({ row: nextMove.row, col: nextMove.col, value: puzzle[nextMove.row][nextMove.col] });
+                history.push({ row: nextMove.row, col: nextMove.col, value: puzzle[nextMove.row][lastMove.col] });
                 puzzle[nextMove.row][nextMove.col] = nextMove.value;
                 updateGrid();
                 saveGame();
