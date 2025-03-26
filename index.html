@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mobile Sudoku with Keyboard</title>
+    <title>Fixed Mobile Sudoku</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -76,19 +76,15 @@
             box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
         }
 
-        .cell:nth-child(3n) {
+        /* Bold lines for every 3rd column (indices 2 and 5) */
+        .cell:nth-child(9n + 3),
+        .cell:nth-child(9n + 6) {
             border-right: 2px solid #333;
         }
 
-        .cell:nth-child(27n + 1),
-        .cell:nth-child(27n + 2),
-        .cell:nth-child(27n + 3),
-        .cell:nth-child(27n + 4),
-        .cell:nth-child(27n + 5),
-        .cell:nth-child(27n + 6),
-        .cell:nth-child(27n + 7),
-        .cell:nth-child(27n + 8),
-        .cell:nth-child(27n + 9) {
+        /* Bold lines for every 3rd row (rows 3 and 6, indices 18-26 and 45-53) */
+        .cell:nth-child(n + 19):nth-child(-n + 27),
+        .cell:nth-child(n + 46):nth-child(-n + 54) {
             border-bottom: 2px solid #333;
         }
 
@@ -163,6 +159,7 @@
             cursor: pointer;
             transition: transform 0.1s ease;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            color: #000; /* Black text for visibility */
         }
 
         .number-btn:active, .keyboard-btn:active {
@@ -266,7 +263,7 @@
         }
 
         function selectCell(cell, row, col) {
-            if (solution[row][col] !== 0) return;
+            if (solution[row][col] !== 0) return; // Can't edit readonly cells
             selectedCell = { cell, row, col };
             document.querySelectorAll('.cell').forEach(c => c.style.backgroundColor = c.classList.contains('readonly') ? '#d1e7dd' : '#fff');
             cell.style.backgroundColor = '#e0f7fa';
@@ -278,9 +275,10 @@
             history.push({ row, col, value: puzzle[row][col] });
             redoStack = [];
             puzzle[row][col] = num;
+            cell.style.backgroundColor = '#fff'; // Reset highlight after input
             updateGrid();
             saveGame();
-            selectedCell = null;
+            selectedCell = null; // Clear selection after input
         }
 
         function updateGrid() {
@@ -294,6 +292,7 @@
                 if (puzzle[row][col] && puzzle[row][col] !== solution[row][col]) {
                     cell.classList.add('error');
                 }
+                // Only highlight if it's the selected cell
                 cell.style.backgroundColor = cell === selectedCell?.cell ? '#e0f7fa' : (cell.classList.contains('readonly') ? '#d1e7dd' : '#fff');
             });
         }
