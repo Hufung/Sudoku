@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mobile-Friendly Sudoku</title>
+    <title>Super Mobile-Friendly Sudoku</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -16,26 +16,28 @@
             margin: 0;
             padding: 10px;
             overflow-x: hidden;
+            box-sizing: border-box;
         }
 
         h1 {
             color: #fff;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-            font-size: clamp(1.5em, 5vw, 2.5em);
-            margin-bottom: 15px;
+            font-size: clamp(1.5em, 6vw, 2.5em);
+            margin: 10px 0;
+            text-align: center;
         }
 
         #sudoku-grid {
             display: grid;
-            grid-template-columns: repeat(9, minmax(30px, 50px));
+            grid-template-columns: repeat(9, minmax(35px, 48px));
             grid-gap: 2px;
             background-color: #333;
             padding: 2px;
             border-radius: 10px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
             width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
+            max-width: 432px; /* 9 * 48px */
+            margin: 10px auto;
         }
 
         .cell {
@@ -47,16 +49,15 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: clamp(16px, 4vw, 20px);
+            font-size: clamp(18px, 4vw, 24px);
             border: none;
             text-align: center;
-            transition: all 0.2s ease;
             box-sizing: border-box;
+            transition: transform 0.1s ease;
         }
 
-        .cell:hover {
-            background-color: #f0f0f0;
-            transform: scale(1.05);
+        .cell:active {
+            transform: scale(1.1);
         }
 
         .cell.readonly {
@@ -87,85 +88,99 @@
         }
 
         .controls {
+            position: sticky;
+            top: 10px;
+            z-index: 10;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 8px;
             width: 100%;
-            max-width: 500px;
+            max-width: 432px;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 10px;
         }
 
         button, #difficulty {
-            padding: clamp(8px, 2vw, 12px) clamp(15px, 3vw, 20px);
+            padding: clamp(10px, 2.5vw, 15px) clamp(15px, 3vw, 20px);
             font-size: clamp(14px, 3vw, 16px);
             border: none;
-            border-radius: 25px;
+            border-radius: 20px;
             background: linear-gradient(45deg, #6b48ff, #00ddeb);
             color: #fff;
             cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.1s ease;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            flex: 1 0 auto;
+            flex: 1 0 80px;
+            max-width: 120px;
         }
 
-        button:hover, #difficulty:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        button:active, #difficulty:active {
+            transform: scale(0.95);
         }
 
         #timer {
             font-size: clamp(16px, 4vw, 20px);
             color: #fff;
             background: rgba(0, 0, 0, 0.2);
-            padding: 10px 20px;
-            border-radius: 20px;
-            margin-top: 15px;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-            animation: pulse 2s infinite;
+            padding: 8px 15px;
+            border-radius: 15px;
+            margin: 10px 0;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
         }
 
         #number-pad {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 5px;
-            margin-top: 10px;
             width: 100%;
-            max-width: 500px;
-            display: none;
+            max-width: 432px;
+            margin: 10px auto;
         }
 
         .number-btn {
-            padding: 15px;
-            font-size: 18px;
+            padding: clamp(12px, 3vw, 18px);
+            font-size: clamp(16px, 4vw, 20px);
             background: #fff;
             border-radius: 10px;
             border: none;
             cursor: pointer;
-            transition: background 0.2s ease;
+            transition: transform 0.1s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
-        .number-btn:hover {
+        .number-btn:active {
+            transform: scale(0.95);
             background: #e0e0e0;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        @media (max-width: 600px) {
+        @media (max-width: 432px) {
             .controls {
                 flex-direction: column;
                 align-items: center;
+                position: relative;
+                top: 0;
             }
             button, #difficulty {
                 width: 100%;
-                max-width: 300px;
+                max-width: 200px;
+            }
+            #number-pad {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (orientation: landscape) and (max-height: 500px) {
+            body {
+                padding: 5px;
             }
             #sudoku-grid {
-                max-width: 100%;
+                max-width: 360px;
+            }
+            .controls, #number-pad {
+                max-width: 360px;
             }
         }
     </style>
@@ -196,12 +211,11 @@
         <button class="number-btn" onclick="inputNumber(7)">7</button>
         <button class="number-btn" onclick="inputNumber(8)">8</button>
         <button class="number-btn" onclick="inputNumber(9)">9</button>
-        <button class="number-btn" onclick="inputNumber(0)">Clear</button>
+        <button class="number-btn" onclick="inputNumber(0)">X</button>
     </div>
 
     <script>
         const grid = document.getElementById('sudoku-grid');
-        const numberPad = document.getElementById('number-pad');
         let puzzle = Array(9).fill().map(() => Array(9).fill(0));
         let solution = Array(9).fill().map(() => Array(9).fill(0));
         let history = [];
@@ -214,11 +228,8 @@
             grid.innerHTML = '';
             for (let i = 0; i < 9; i++) {
                 for (let j = 0; j < 9; j++) {
-                    const cell = document.createElement('input');
+                    const cell = document.createElement('div');
                     cell.classList.add('cell');
-                    cell.type = 'text';
-                    cell.maxLength = 1;
-                    cell.readOnly = true; // Disable direct typing
                     cell.addEventListener('click', () => selectCell(cell, i, j));
                     grid.appendChild(cell);
                 }
@@ -226,9 +237,8 @@
         }
 
         function selectCell(cell, row, col) {
-            if (solution[row][col] !== 0) return; // Can't edit readonly cells
+            if (solution[row][col] !== 0) return;
             selectedCell = { cell, row, col };
-            numberPad.style.display = 'grid';
             document.querySelectorAll('.cell').forEach(c => c.style.backgroundColor = c.classList.contains('readonly') ? '#d1e7dd' : '#fff');
             cell.style.backgroundColor = '#e0f7fa';
         }
@@ -239,24 +249,9 @@
             history.push({ row, col, value: puzzle[row][col] });
             redoStack = [];
             puzzle[row][col] = num;
-            cell.value = num || '';
             updateGrid();
             saveGame();
-            numberPad.style.display = 'none';
             selectedCell = null;
-        }
-
-        function handleInput(e, row, col) {
-            const value = e.target.value;
-            if (value && !/^[1-9]$/.test(value)) {
-                e.target.value = '';
-                return;
-            }
-            history.push({ row, col, value: puzzle[row][col] });
-            redoStack = [];
-            puzzle[row][col] = value ? parseInt(value) : 0;
-            updateGrid();
-            saveGame();
         }
 
         function updateGrid() {
@@ -264,12 +259,13 @@
             cells.forEach((cell, index) => {
                 const row = Math.floor(index / 9);
                 const col = index % 9;
-                cell.value = puzzle[row][col] || '';
+                cell.textContent = puzzle[row][col] || '';
                 cell.classList.toggle('readonly', solution[row][col] !== 0);
                 cell.classList.remove('error');
                 if (puzzle[row][col] && puzzle[row][col] !== solution[row][col]) {
                     cell.classList.add('error');
                 }
+                cell.style.backgroundColor = cell === selectedCell?.cell ? '#e0f7fa' : (cell.classList.contains('readonly') ? '#d1e7dd' : '#fff');
             });
         }
 
@@ -282,8 +278,6 @@
             clearInterval(timerInterval);
             timerInterval = setInterval(updateTimer, 1000);
             updateGrid();
-            saveGame();
-            numberPad.style.display = 'none';
             selectedCell = null;
         }
 
@@ -346,7 +340,7 @@
             puzzle = solution.map(row => row.slice());
             updateGrid();
             clearInterval(timerInterval);
-            numberPad.style.display = 'none';
+            selectedCell = null;
         }
 
         function getHint() {
