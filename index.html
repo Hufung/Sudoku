@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fixed Mobile Sudoku</title>
+    <title>Mobile Sudoku with Keyboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -51,12 +51,13 @@
             justify-content: center;
             align-items: center;
             font-size: clamp(14px, 3.5vw, 20px);
-            line-height: 1; /* Ensure text stays within cell height */
+            line-height: 1;
             border: none;
             text-align: center;
             box-sizing: border-box;
             transition: transform 0.1s ease;
-            overflow: hidden; /* Prevent text overflow */
+            overflow: hidden;
+            cursor: pointer;
         }
 
         .cell:active {
@@ -67,6 +68,7 @@
             background-color: #d1e7dd;
             font-weight: 600;
             color: #0f5132;
+            cursor: default;
         }
 
         .cell.error {
@@ -134,16 +136,25 @@
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
         }
 
-        #number-pad {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
+        #input-container {
             width: 100%;
             max-width: 432px;
             margin: 10px auto;
         }
 
-        .number-btn {
+        #number-pad, #keyboard {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            width: 100%;
+        }
+
+        #keyboard {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .number-btn, .keyboard-btn {
             padding: clamp(12px, 3vw, 18px);
             font-size: clamp(16px, 4vw, 20px);
             background: #fff;
@@ -154,7 +165,7 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
-        .number-btn:active {
+        .number-btn:active, .keyboard-btn:active {
             transform: scale(0.95);
             background: #e0e0e0;
         }
@@ -170,7 +181,7 @@
                 width: 100%;
                 max-width: 200px;
             }
-            #number-pad {
+            #number-pad, #keyboard {
                 grid-template-columns: repeat(3, 1fr);
             }
         }
@@ -179,7 +190,7 @@
             body {
                 padding: 5px;
             }
-            #sudoku-grid, .controls, #number-pad {
+            #sudoku-grid, .controls, #input-container {
                 max-width: 360px;
             }
         }
@@ -198,26 +209,41 @@
         <button onclick="getHint()">Hint</button>
         <button onclick="undo()">Undo</button>
         <button onclick="redo()">Redo</button>
+        <button onclick="toggleInputMode()">Toggle Input</button>
     </div>
     <div id="sudoku-grid"></div>
     <div id="timer">Time: 0:00</div>
-    <div id="number-pad">
-        <button class="number-btn" onclick="
-
-inputNumber(1)">1</button>
-        <button class="number-btn" onclick="inputNumber(2)">2</button>
-        <button class="number-btn" onclick="inputNumber(3)">3</button>
-        <button class="number-btn" onclick="inputNumber(4)">4</button>
-        <button class="number-btn" onclick="inputNumber(5)">5</button>
-        <button class="number-btn" onclick="inputNumber(6)">6</button>
-        <button class="number-btn" onclick="inputNumber(7)">7</button>
-        <button class="number-btn" onclick="inputNumber(8)">8</button>
-        <button class="number-btn" onclick="inputNumber(9)">9</button>
-        <button class="number-btn" onclick="inputNumber(0)">X</button>
+    <div id="input-container">
+        <div id="number-pad">
+            <button class="number-btn" onclick="inputNumber(1)">1</button>
+            <button class="number-btn" onclick="inputNumber(2)">2</button>
+            <button class="number-btn" onclick="inputNumber(3)">3</button>
+            <button class="number-btn" onclick="inputNumber(4)">4</button>
+            <button class="number-btn" onclick="inputNumber(5)">5</button>
+            <button class="number-btn" onclick="inputNumber(6)">6</button>
+            <button class="number-btn" onclick="inputNumber(7)">7</button>
+            <button class="number-btn" onclick="inputNumber(8)">8</button>
+            <button class="number-btn" onclick="inputNumber(9)">9</button>
+            <button class="number-btn" onclick="inputNumber(0)">X</button>
+        </div>
+        <div id="keyboard">
+            <button class="keyboard-btn" onclick="inputNumber(1)">1</button>
+            <button class="keyboard-btn" onclick="inputNumber(2)">2</button>
+            <button class="keyboard-btn" onclick="inputNumber(3)">3</button>
+            <button class="keyboard-btn" onclick="inputNumber(4)">4</button>
+            <button class="keyboard-btn" onclick="inputNumber(5)">5</button>
+            <button class="keyboard-btn" onclick="inputNumber(6)">6</button>
+            <button class="keyboard-btn" onclick="inputNumber(7)">7</button>
+            <button class="keyboard-btn" onclick="inputNumber(8)">8</button>
+            <button class="keyboard-btn" onclick="inputNumber(9)">9</button>
+            <button class="keyboard-btn" onclick="inputNumber(0)">X</button>
+        </div>
     </div>
 
     <script>
         const grid = document.getElementById('sudoku-grid');
+        const numberPad = document.getElementById('number-pad');
+        const keyboard = document.getElementById('keyboard');
         let puzzle = Array(9).fill().map(() => Array(9).fill(0));
         let solution = Array(9).fill().map(() => Array(9).fill(0));
         let history = [];
@@ -225,6 +251,7 @@ inputNumber(1)">1</button>
         let timerInterval;
         let seconds = 0;
         let selectedCell = null;
+        let useKeyboard = false;
 
         function createGrid() {
             grid.innerHTML = '';
@@ -269,6 +296,12 @@ inputNumber(1)">1</button>
                 }
                 cell.style.backgroundColor = cell === selectedCell?.cell ? '#e0f7fa' : (cell.classList.contains('readonly') ? '#d1e7dd' : '#fff');
             });
+        }
+
+        function toggleInputMode() {
+            useKeyboard = !useKeyboard;
+            numberPad.style.display = useKeyboard ? 'none' : 'grid';
+            keyboard.style.display = useKeyboard ? 'grid' : 'none';
         }
 
         function newGame() {
