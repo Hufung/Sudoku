@@ -2,489 +2,244 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fixed Mobile Sudoku</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fighter Missile Card Game</title>
     <style>
         body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #74ebd5, #acb6e5);
-            font-family: 'Poppins', sans-serif;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            text-align: center;
             margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .zone {
+            width: 45%;
             padding: 10px;
-            overflow-x: hidden;
-            box-sizing: border-box;
-        }
-
-        h1 {
-            color: #fff;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-            font-size: clamp(1.5em, 6vw, 2.5em);
-            margin: 10px 0;
-            text-align: center;
-        }
-
-        #sudoku-grid {
-            display: grid;
-            grid-template-columns: repeat(9, minmax(35px, 48px));
-            grid-gap: 2px;
-            background-color: #333;
-            padding: 2px;
-            border-radius: 10px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 432px;
-            margin: 10px auto;
-        }
-
-        .cell {
-            position: relative;
-            width: 100%;
-            height: 0;
-            padding-bottom: 100%;
             background-color: #fff;
+            border: 1px solid #ccc;
             border-radius: 5px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: clamp(14px, 3.5vw, 20px);
-            line-height: 1;
-            border: none;
-            text-align: center;
-            box-sizing: border-box;
-            transition: transform 0.1s ease;
-            overflow: hidden;
+        }
+        .card {
+            border: 1px solid #000;
+            padding: 10px;
+            margin: 5px;
+            background-color: #e0e0e0;
             cursor: pointer;
         }
-
-        .cell:active {
-            transform: scale(1.1);
+        .card:hover {
+            background-color: #d0d0d0;
         }
-
-        .cell.readonly {
-            background-color: #d1e7dd;
-            font-weight: 600;
-            color: #0f5132;
-            cursor: default;
+        .field-card {
+            background-color: #ffe0e0;
         }
-
-        .cell.error {
-            background-color: #ffe6e6;
-            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        .enemy-card {
+            background-color: #e0e0ff;
         }
-
-        .cell:nth-child(9n + 3),
-        .cell:nth-child(9n + 6) {
-            border-right: 2px solid #333;
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
         }
-
-        .cell:nth-child(n + 19):nth-child(-n + 27),
-        .cell:nth-child(n + 46):nth-child(-n + 54) {
-            border-bottom: 2px solid #333;
-        }
-
-        .controls {
-            position: sticky;
-            top: 10px;
-            z-index: 10;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            max-width: 432px;
-            padding: 5px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-
-        button, #difficulty {
-            padding: clamp(10px, 2.5vw, 15px) clamp(15px, 3vw, 20px);
-            font-size: clamp(14px, 3vw, 16px);
-            border: none;
-            border-radius: 20px;
-            background: linear-gradient(45deg, #6b48ff, #00ddeb);
-            color: #fff;
-            cursor: pointer;
-            transition: transform 0.1s ease;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            flex: 1 0 80px;
-            max-width: 120px;
-        }
-
-        button:active, #difficulty:active {
-            transform: scale(0.95);
-        }
-
-        #timer {
-            font-size: clamp(16px, 4vw, 20px);
-            color: #fff;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 8px 15px;
-            border-radius: 15px;
-            margin: 10px 0;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-        }
-
-        #input-container {
-            width: 100%;
-            max-width: 432px;
-            margin: 10px auto;
-        }
-
-        #number-pad, #keyboard {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
-            width: 100%;
-        }
-
-        #keyboard {
-            display: none;
-            grid-template-columns: repeat(3, 1fr);
-        }
-
-        .number-btn, .keyboard-btn {
-            padding: clamp(12px, 3vw, 18px);
-            font-size: clamp(16px, 4vw, 20px);
-            background: #fff;
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            transition: transform 0.1s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            color: #000;
-        }
-
-        .number-btn:active, .keyboard-btn:active {
-            transform: scale(0.95);
-            background: #e0e0e0;
-        }
-
-        @media (max-width: 432px) {
-            .controls {
-                flex-direction: column;
-                align-items: center;
-                position: relative;
-                top: 0;
-            }
-            button, #difficulty {
-                width: 100%;
-                max-width: 200px;
-            }
-            #number-pad, #keyboard {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        @media (orientation: landscape) and (max-height: 500px) {
-            body {
-                padding: 5px;
-            }
-            #sudoku-grid, .controls, #input-container {
-                max-width: 360px;
-            }
+        button {
+            padding: 5px 10px;
+            margin: 5px;
         }
     </style>
 </head>
 <body>
-    <h1>Sudoku</h1>
-    <div class="controls">
-        <select id="difficulty">
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-        </select>
-        <button onclick="newGame()">New Game</button>
-        <button onclick="solvePuzzle()">Solve</button>
-        <button onclick="getHint()">Hint</button>
-        <button onclick="undo()">Undo</button>
-        <button onclick="redo()">Redo</button>
-        <button onclick="toggleInputMode()">Toggle Input</button>
-    </div>
-    <div id="sudoku-grid"></div>
-    <div id="timer">Time: 0:00</div>
-    <div id="input-container">
-        <div id="number-pad">
-            <button class="number-btn" onclick="inputNumber(1)">1</button>
-            <button class="number-btn" onclick="inputNumber(2)">2</button>
-            <button class="number-btn" onclick="inputNumber(3)">3</button>
-            <button class="number-btn" onclick="inputNumber(4)">4</button>
-            <button class="number-btn" onclick="inputNumber(5)">5</button>
-            <button class="number-btn" onclick="inputNumber(6)">6</button>
-            <button class="number-btn" onclick="inputNumber(7)">7</button>
-            <button class="number-btn" onclick="inputNumber(8)">8</button>
-            <button class="number-btn" onclick="inputNumber(9)">9</button>
-            <button class="number-btn" onclick="inputNumber(0)">X</button>
+    <h1>Fighter Missile Card Game</h1>
+    <div class="container">
+        <div class="zone" id="player-zone">
+            <h2>Your Field</h2>
+            <div id="player-field"></div>
+            <h2>Your Hand</h2>
+            <div id="player-hand"></div>
         </div>
-        <div id="keyboard">
-            <button class="keyboard-btn" onclick="inputNumber(1)">1</button>
-            <button class="keyboard-btn" onclick="inputNumber(2)">2</button>
-            <button class="keyboard-btn" onclick="inputNumber(3)">3</button>
-            <button class="keyboard-btn" onclick="inputNumber(4)">4</button>
-            <button class="keyboard-btn" onclick="inputNumber(5)">5</button>
-            <button class="keyboard-btn" onclick="inputNumber(6)">6</button>
-            <button class="keyboard-btn" onclick="inputNumber(7)">7</button>
-            <button class="keyboard-btn" onclick="inputNumber(8)">8</button>
-            <button class="keyboard-btn" onclick="inputNumber(9)">9</button>
-            <button class="keyboard-btn" onclick="inputNumber(0)">X</button>
+        <div class="zone" id="enemy-zone">
+            <h2>Enemy Field</h2>
+            <div id="enemy-field"></div>
         </div>
     </div>
+    <div id="status"></div>
+    <button onclick="endTurn()">End Turn</button>
 
     <script>
-        const grid = document.getElementById('sudoku-grid');
-        const numberPad = document.getElementById('number-pad');
-        const keyboard = document.getElementById('keyboard');
-        let puzzle = Array(9).fill().map(() => Array(9).fill(0));
-        let solution = Array(9).fill().map(() => Array(9).fill(0));
-        let history = [];
-        let redoStack = [];
-        let timerInterval;
-        let seconds = 0;
-        let selectedCell = null;
-        let useKeyboard = false;
+        // Card data with real-world fighters and missiles
+        const cards = {
+            fighters: [
+                { id: 1, name: "F-22 Raptor", health: 120, attack: 40, description: "Stealth fighter" },
+                { id: 2, name: "Su-57 Felon", health: 110, attack: 45, description: "Russian 5th-gen" },
+                { id: 3, name: "J-20 Mighty Dragon", health: 130, attack: 35, description: "Chinese stealth" },
+                { id: 4, name: "F-35 Lightning II", health: 100, attack: 50, description: "Multirole fighter" },
+                { id: 5, name: "MiG-31 Foxhound", health: 140, attack: 30, description: "Interceptor" }
+            ],
+            missiles: [
+                { id: 6, name: "AIM-120 AMRAAM", damage: 60, description: "Air-to-air missile" },
+                { id: 7, name: "R-77 Adder", damage: 50, effect: "stun", description: "Russian BVR missile" },
+                { id: 8, name: "AGM-88 HARM", damage: 70, description: "Anti-radar missile" },
+                { id: 9, name: "Meteor BVRAAM", damage: 55, description: "Long-range missile" }
+            ],
+            support: [
+                { id: 10, name: "Radar Jammer", effect: "block", description: "Blocks next enemy attack" }
+            ]
+        };
 
-        function createGrid() {
-            grid.innerHTML = '';
-            for (let i = 0; i < 9; i++) {
-                for (let j = 0; j < 9; j++) {
-                    const cell = document.createElement('div');
-                    cell.classList.add('cell');
-                    cell.dataset.row = i;
-                    cell.dataset.col = j;
-                    cell.addEventListener('click', () => selectCell(cell, i, j));
-                    grid.appendChild(cell);
-                }
-            }
-        }
+        // Game state
+        let player = {
+            hand: [
+                cards.fighters[0], cards.missiles[0], cards.fighters[1], 
+                cards.missiles[1], cards.support[0], cards.fighters[2]
+            ],
+            field: []
+        };
+        let enemy = {
+            field: [
+                { ...cards.fighters[3], health: 100 }, 
+                { ...cards.fighters[4], health: 140 }
+            ]
+        };
 
-        function selectCell(cell, row, col) {
-            if (solution[row][col] !== 0) return; // Can't edit readonly cells
-            selectedCell = { cell, row, col };
-            document.querySelectorAll('.cell').forEach(c => c.style.backgroundColor = c.classList.contains('readonly') ? '#d1e7dd' : '#fff');
-            cell.style.backgroundColor = '#e0f7fa';
-        }
-
-        function inputNumber(num) {
-            if (!selectedCell) {
-                console.log("No cell selected");
-                return;
-            }
-            const { cell, row, col } = selectedCell;
-            console.log(`Inputting ${num} at row ${row}, col ${col}`);
-            history.push({ row, col, value: puzzle[row][col] });
-            redoStack = [];
-            puzzle[row][col] = num;
-            cell.style.backgroundColor = '#fff'; // Reset highlight after input
-            updateGrid();
-            saveGame();
-            selectedCell = null; // Clear selection after input
-        }
-
-        function updateGrid() {
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach((cell, index) => {
-                const row = parseInt(cell.dataset.row);
-                const col = parseInt(cell.dataset.col);
-                cell.textContent = puzzle[row][col] || '';
-                cell.classList.toggle('readonly', solution[row][col] !== 0);
-                cell.classList.remove('error');
-                if (puzzle[row][col] && puzzle[row][col] !== solution[row][col]) {
-                    cell.classList.add('error');
-                }
-                cell.style.backgroundColor = cell === selectedCell?.cell ? '#e0f7fa' : (cell.classList.contains('readonly') ? '#d1e7dd' : '#fff');
+        // Render functions
+        function renderHand() {
+            const handDiv = document.getElementById("player-hand");
+            handDiv.innerHTML = "";
+            player.hand.forEach((card, index) => {
+                const cardDiv = document.createElement("div");
+                cardDiv.className = "card";
+                cardDiv.innerText = `${card.name} ${card.health ? "(HP: " + card.health + ")" : card.damage ? "(DMG: " + card.damage + ")" : "(Support)"}`;
+                cardDiv.onclick = () => playCard(index);
+                handDiv.appendChild(cardDiv);
             });
         }
 
-        function toggleInputMode() {
-            useKeyboard = !useKeyboard;
-            numberPad.style.display = useKeyboard ? 'none' : 'grid';
-            keyboard.style.display = useKeyboard ? 'grid' : 'none';
+        function renderField() {
+            const fieldDiv = document.getElementById("player-field");
+            fieldDiv.innerHTML = "";
+            player.field.forEach((card, index) => {
+                const cardDiv = document.createElement("div");
+                cardDiv.className = "card field-card";
+                cardDiv.innerText = `${card.name} (HP: ${card.health})`;
+                cardDiv.onclick = () => selectFighter(index);
+                fieldDiv.appendChild(cardDiv);
+            });
         }
 
-        function newGame() {
-            const difficulty = document.getElementById('difficulty').value;
-            generatePuzzle(difficulty);
-            history = [];
-            redoStack = [];
-            seconds = 0;
-            clearInterval(timerInterval);
-            timerInterval = setInterval(updateTimer, 1000);
-            updateGrid();
-            selectedCell = null;
+        function renderEnemyField() {
+            const enemyDiv = document.getElementById("enemy-field");
+            enemyDiv.innerHTML = "";
+            enemy.field.forEach((card, index) => {
+                const cardDiv = document.createElement("div");
+                cardDiv.className = "card enemy-card";
+                cardDiv.innerText = `${card.name} (HP: ${card.health})`;
+                cardDiv.onclick = () => attackEnemy(index);
+                enemyDiv.appendChild(cardDiv);
+            });
         }
 
-        function generatePuzzle(difficulty) {
-            solution = generateFullGrid();
-            puzzle = solution.map(row => row.slice());
-            const cellsToRemove = { easy: 40, medium: 50, hard: 60 }[difficulty];
-            removeNumbers(puzzle, cellsToRemove);
-        }
+        // Game logic
+        let selectedFighter = null;
+        let selectedMissile = null;
 
-        function generateFullGrid() {
-            const grid = Array(9).fill().map(() => Array(9).fill(0));
-            solveSudoku(grid);
-            return grid;
-        }
-
-        function removeNumbers(grid, count) {
-            let attempts = count;
-            while (attempts > 0) {
-                let row = Math.floor(Math.random() * 9);
-                let col = Math.floor(Math.random() * 9);
-                while (grid[row][col] === 0) {
-                    row = Math.floor(Math.random() * 9);
-                    col = Math.floor(Math.random() * 9);
+        function playCard(index) {
+            const card = player.hand[index];
+            if (card.health) { // Fighter card
+                player.field.push({ ...card });
+                player.hand.splice(index, 1);
+                updateStatus(`Deployed ${card.name}`);
+            } else if (card.damage) { // Missile card
+                if (selectedFighter === null) {
+                    updateStatus("Select a fighter first to use this missile!");
+                    return;
                 }
-                const backup = grid[row][col];
-                grid[row][col] = 0;
-                const tempGrid = grid.map(row => row.slice());
-                if (!hasUniqueSolution(tempGrid)) {
-                    grid[row][col] = backup;
-                } else {
-                    attempts--;
+                selectedMissile = card;
+                player.hand.splice(index, 1);
+                updateStatus(`Selected ${card.name}. Now choose an enemy to attack.`);
+            } else if (card.effect === "block") { // Support card
+                player.hand.splice(index, 1);
+                updateStatus("Radar Jammer activated! Next enemy attack blocked.");
+                // Simple effect: next enemy attack does 0 damage (handled in endTurn)
+            }
+            renderHand();
+            renderField();
+        }
+
+        function selectFighter(index) {
+            selectedFighter = index;
+            updateStatus(`Selected ${player.field[index].name}. Use a missile or attack an enemy.`);
+        }
+
+        function attackEnemy(enemyIndex) {
+            if (selectedFighter === null) {
+                updateStatus("Select a fighter first!");
+                return;
+            }
+            const fighter = player.field[selectedFighter];
+            const enemyFighter = enemy.field[enemyIndex];
+            let damage = selectedMissile ? selectedMissile.damage : fighter.attack;
+            let message = `${fighter.name} attacked ${enemyFighter.name}`;
+
+            if (selectedMissile) {
+                message += ` with ${selectedMissile.name} for ${damage} damage!`;
+                if (selectedMissile.effect === "stun") {
+                    message += " Enemy is stunned!";
+                    // Stun effect could skip enemy's next turn, but simplified here
                 }
-            }
-        }
-
-        function hasUniqueSolution(grid) {
-            let solutions = 0;
-            function countSolutions(board) {
-                let empty = findEmpty(board);
-                if (!empty) {
-                    solutions++;
-                    return solutions > 1;
-                }
-                let [row, col] = empty;
-                for (let num = 1; num <= 9; num++) {
-                    if (isValid(board, num, row, col)) {
-                        board[row][col] = num;
-                        if (countSolutions(board)) return true;
-                        board[row][col] = 0;
-                    }
-                }
-                return false;
-            }
-            countSolutions(grid.map(row => row.slice()));
-            return solutions === 1;
-        }
-
-        function solvePuzzle() {
-            puzzle = solution.map(row => row.slice());
-            updateGrid();
-            clearInterval(timerInterval);
-            selectedCell = null;
-        }
-
-        function getHint() {
-            const emptyCells = [];
-            for (let i = 0; i < 9; i++) {
-                for (let j = 0; j < 9; j++) {
-                    if (puzzle[i][j] === 0) {
-                        emptyCells.push([i, j]);
-                    }
-                }
-            }
-            if (emptyCells.length > 0) {
-                const [row, col] = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-                puzzle[row][col] = solution[row][col];
-                updateGrid();
-                saveGame();
-            }
-        }
-
-        function undo() {
-            if (history.length > 0) {
-                const lastMove = history.pop();
-                redoStack.push({ row: lastMove.row, col: lastMove.col, value: puzzle[lastMove.row][lastMove.col] });
-                puzzle[lastMove.row][lastMove.col] = lastMove.value;
-                updateGrid();
-                saveGame();
-            }
-        }
-
-        function redo() {
-            if (redoStack.length > 0) {
-                const nextMove = redoStack.pop();
-                history.push({ row: nextMove.row, col: nextMove.col, value: puzzle[nextMove.row][lastMove.col] });
-                puzzle[nextMove.row][nextMove.col] = nextMove.value;
-                updateGrid();
-                saveGame();
-            }
-        }
-
-        function updateTimer() {
-            seconds++;
-            const minutes = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            document.getElementById('timer').textContent = `Time: ${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-        }
-
-        function saveGame() {
-            localStorage.setItem('sudokuPuzzle', JSON.stringify(puzzle));
-            localStorage.setItem('sudokuSolution', JSON.stringify(solution));
-            localStorage.setItem('sudokuHistory', JSON.stringify(history));
-            localStorage.setItem('sudokuRedoStack', JSON.stringify(redoStack));
-            localStorage.setItem('sudokuSeconds', seconds);
-        }
-
-        function loadGame() {
-            const savedPuzzle = localStorage.getItem('sudokuPuzzle');
-            if (savedPuzzle) {
-                puzzle = JSON.parse(savedPuzzle);
-                solution = JSON.parse(localStorage.getItem('sudokuSolution'));
-                history = JSON.parse(localStorage.getItem('sudokuHistory'));
-                redoStack = JSON.parse(localStorage.getItem('sudokuRedoStack'));
-                seconds = parseInt(localStorage.getItem('sudokuSeconds'));
-                updateGrid();
-                timerInterval = setInterval(updateTimer, 1000);
+                selectedMissile = null;
             } else {
-                newGame();
+                message += ` for ${damage} damage!`;
             }
+
+            enemyFighter.health -= damage;
+            updateStatus(message);
+            if (enemyFighter.health <= 0) {
+                enemy.field.splice(enemyIndex, 1);
+                updateStatus(`${enemyFighter.name} was destroyed!`);
+            }
+            selectedFighter = null;
+            renderEnemyField();
+            checkWin();
         }
 
-        function solveSudoku(board) {
-            let empty = findEmpty(board);
-            if (!empty) return true;
-            let [row, col] = empty;
-            for (let num = 1; num <= 9; num++) {
-                if (isValid(board, num, row, col)) {
-                    board[row][col] = num;
-                    if (solveSudoku(board)) return true;
-                    board[row][col] = 0;
+        let blockNextAttack = false;
+        function endTurn() {
+            if (enemy.field.length > 0 && player.field.length > 0) {
+                const enemyFighter = enemy.field[0];
+                const playerFighter = player.field[0];
+                let damage = blockNextAttack ? 0 : enemyFighter.attack;
+                playerFighter.health -= damage;
+                updateStatus(`Enemy ${enemyFighter.name} attacked your ${playerFighter.name} for ${damage} damage!`);
+                if (playerFighter.health <= 0) {
+                    player.field.splice(0, 1);
+                    updateStatus(`Your ${playerFighter.name} was destroyed!`);
                 }
+                blockNextAttack = false; // Reset block after use
+                renderField();
             }
-            return false;
+            checkWin();
         }
 
-        function findEmpty(board) {
-            for (let i = 0; i < 9; i++) {
-                for (let j = 0; j < 9; j++) {
-                    if (board[i][j] === 0) return [i, j];
-                }
+        function checkWin() {
+            if (enemy.field.length === 0) {
+                updateStatus("You win! All enemy fighters destroyed.");
+            } else if (player.field.length === 0 && player.hand.every(card => !card.health)) {
+                updateStatus("You lose! No fighters left.");
             }
-            return null;
         }
 
-        function isValid(board, num, row, col) {
-            for (let x = 0; x < 9; x++) {
-                if (board[row][x] === num || board[x][col] === num) return false;
-            }
-            let startRow = row - row % 3, startCol = col - col % 3;
-            for (let i = 0; i < 3; i++) {
-                for (let j = 0; j < 3; j++) {
-                    if (board[i + startRow][j + startCol] === num) return false;
-                }
-            }
-            return true;
+        function updateStatus(message) {
+            document.getElementById("status").innerText = message;
         }
 
-        createGrid();
-        loadGame();
+        // Initial render
+        renderHand();
+        renderField();
+        renderEnemyField();
+        updateStatus("Deploy a fighter or use a missile to attack!");
     </script>
 </body>
 </html>
