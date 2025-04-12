@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Magic FPS Game</title>
+    <title>3D Magic FPS Game Enhanced</title>
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
@@ -32,7 +32,7 @@
     <div id="ui">
         <div id="health">Health: 10</div>
         <div id="score">Score: 0</div>
-        <div>Controls: WASD to move, Mouse to aim, Click to cast spell</div>
+        <div>Controls: WASD to move, Mouse to aim, Click to cast spell, Space to jump</div>
     </div>
     <div id="crosshair"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -50,9 +50,13 @@
                 velocity: new THREE.Vector3(),
                 speed: 0.1,
                 yaw: 0,
-                pitch: 0
+                pitch: 0,
+                isJumping: false,
+                jumpVelocity: 0.2,
+                gravity: 0.01
             },
             keys: {},
+            time: 0,
 
             init: function() {
                 // Scene setup
@@ -91,16 +95,22 @@
                 const ambient = new THREE.AmbientLight(0x404040);
                 this.scene.add(ambient);
 
-                // Raycaster
+                // Raycaster (for future use if needed)
                 this.raycaster = new THREE.Raycaster();
 
                 // Event listeners
                 window.addEventListener('click', this.onMouseClick.bind(this));
                 window.addEventListener('mousemove', this.onMouseMove.bind(this));
-                window.addEventListener('keydown', (e) => this.keys[e.key.toLowerCase()] = true);
+                window.addEventListener('keydown', (e) => {
+                    this.keys[e.key.toLowerCase()] = true;
+                    if (e.key === ' ' && !this.player.isJumping) {
+                        this.player.velocity.y = this.player.jumpVelocity;
+                        this.player.isJumping = true;
+                    }
+                });
                 window.addEventListener('keyup', (e) => this.keys[e.key.toLowerCase()] = false);
 
-                // Lock pointer for FPS controls
+                // Pointer lock
                 document.addEventListener('click', () => this.renderer.domElement.requestPointerLock());
 
                 // Spawn enemies
@@ -133,14 +143,14 @@
                 const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
 
                 const angle = Math.random() * Math.PI * 2;
-                const radius = 15; // Farther spawn
+                const radius = 15;
                 enemy.position.set(Math.cos(angle) * radius, 0.5, Math.sin(angle) * radius);
 
                 this.scene.add(enemy);
                 this.enemies.push(enemy);
             },
 
-            createParticleSystem: function(position, color, count = 20) {
+            createParticleSystem: function(position, color, count = 20, size = 0.2) {
                 const particleGeometry = new THREE.BufferGeometry();
                 const positions = [];
                 const velocities = [];
@@ -159,7 +169,7 @@
 
                 const particleMaterial = new THREE.PointsMaterial({
                     color: color,
-                    size: 0.2,
+                    size: size,
                     transparent: true,
                     opacity: 0.8
                 });
@@ -183,11 +193,23 @@
                 this.camera.getWorldDirection(direction);
                 projectile.velocity = direction.multiplyScalar(0.5);
 
+                // Pulsing glow
+                projectile.material.emissive = new THREE.Color(0x00ffff);
+                projectile.material.emissiveIntensity = 0.5;
+                projectile.pulsePhase = Math.random() * Math.PI;
+
                 this.scene.add(projectile);
                 this.projectiles.push(projectile);
 
-                // Spell cast particles
-                this.createParticleSystem(projectile.position, 0x00ffff, 10);
+                // Casting particles
+                this.createParticleSystem(projectile.position, 0x00ffff, 15, 0.15);
+            },
+
+            createTrailParticles: function(position) {
+                // Smaller, denser trail
+                const trail = this.createParticleSystem(position, 0x00ffff, 5, 0.1);
+                trail.lifetime = 0.3; // Short-lived trail
+                return trail;
             },
 
             updateParticles: function(delta) {
@@ -217,10 +239,24 @@
                 this.projectiles.forEach((projectile, pIndex) => {
                     projectile.position.add(projectile.velocity);
 
+                    // Pulsing effect
+                    projectile.pulsePhase += delta * 5;
+                    projectile.material.emissiveIntensity = 0.5 + 0.3 * Math.sin(projectile.pulsePhase);
+
+                    // Trail particles
+                    this.createTrailParticles(projectile.position);
+
                     // Check collision with enemies
                     this.enemies.forEach((enemy, eIndex) => {
                         if (projectile.position.distanceTo(enemy.position) < 0.5) {
-                            this.createParticleSystem(enemy.position, 0xffff00, 20); // Explosion
+                            // Enhanced impact effect
+                            this.createParticleSystem(enemy.position, 0xffff00, 30, 0.25); // Explosion
+                            this.createParticleSystem(enemy.position, 0x00ffff, 20, 0.15); // Extra sparks
+                            // Flash light
+                            const flash = new THREE.PointLight(0x00ffff, 1, 5);
+                            flash.position.copy(enemy.position);
+                            this.scene.add(flash);
+                            setTimeout(() => this.scene.remove(flash), 100);
                             this.scene.remove(enemy);
                             this.scene.remove(projectile);
                             this.enemies.splice(eIndex, 1);
@@ -230,7 +266,7 @@
                         }
                     });
 
-                    // Remove projectiles that go too far
+                    // Remove far projectiles
                     if (projectile.position.length() > 20) {
                         this.scene.remove(projectile);
                         this.projectiles.splice(pIndex, 1);
@@ -239,8 +275,11 @@
             },
 
             update: function(delta) {
+                this.time += delta;
+
                 // Player movement
-                this.player.velocity.set(0, 0, 0);
+                this.player.velocity.x = 0;
+                this.player.velocity.z = 0;
                 if (this.keys['w']) {
                     this.player.velocity.z -= this.player.speed * Math.cos(this.player.yaw);
                     this.player.velocity.x -= this.player.speed * Math.sin(this.player.yaw);
@@ -257,8 +296,18 @@
                     this.player.velocity.x += this.player.speed * Math.cos(this.player.yaw);
                     this.player.velocity.z -= this.player.speed * Math.sin(this.player.yaw);
                 }
+
+                // Apply gravity and jumping
+                this.player.velocity.y -= this.player.gravity;
                 this.player.position.add(this.player.velocity);
-                this.player.position.y = 1; // Keep player on ground
+
+                // Ground collision
+                if (this.player.position.y <= 1) {
+                    this.player.position.y = 1;
+                    this.player.velocity.y = 0;
+                    this.player.isJumping = false;
+                }
+
                 this.updateCamera();
 
                 // Enemy movement
@@ -292,7 +341,7 @@
             animate: function() {
                 const delta = 1 / 60;
                 requestAnimationFrame(this.animate.bind(this));
-                if (this.health > 0) {
+                if                if (this.health > 0) {
                     this.update(delta);
                 }
                 this.renderer.render(this.scene, this.camera);
