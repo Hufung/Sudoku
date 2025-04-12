@@ -3,243 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fighter Missile Card Game</title>
+    <title>3D Magic Game</title>
     <style>
-        body {
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            display: flex;
-            justify-content: space-between;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .zone {
-            width: 45%;
-            padding: 10px;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .card {
-            border: 1px solid #000;
-            padding: 10px;
-            margin: 5px;
-            background-color: #e0e0e0;
-            cursor: pointer;
-        }
-        .card:hover {
-            background-color: #d0d0d0;
-        }
-        .field-card {
-            background-color: #ffe0e0;
-        }
-        .enemy-card {
-            background-color: #e0e0ff;
-        }
-        #status {
-            margin-top: 20px;
-            font-weight: bold;
-        }
-        button {
-            padding: 5px 10px;
-            margin: 5px;
         }
     </style>
 </head>
 <body>
-    <h1>Fighter Missile Card Game</h1>
-    <div class="container">
-        <div class="zone" id="player-zone">
-            <h2>Your Field</h2>
-            <div id="player-field"></div>
-            <h2>Your Hand</h2>
-            <div id="player-hand"></div>
-        </div>
-        <div class="zone" id="enemy-zone">
-            <h2>Enemy Field</h2>
-            <div id="enemy-field"></div>
-        </div>
+    <div id="ui">
+        <div id="health">Health: 10</div>
+        <div id="score">Score: 0</div>
     </div>
-    <div id="status"></div>
-    <button onclick="endTurn()">End Turn</button>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Card data with real-world fighters and missiles
-        const cards = {
-            fighters: [
-                { id: 1, name: "F-22 Raptor", health: 120, attack: 40, description: "Stealth fighter" },
-                { id: 2, name: "Su-57 Felon", health: 110, attack: 45, description: "Russian 5th-gen" },
-                { id: 3, name: "J-20 Mighty Dragon", health: 130, attack: 35, description: "Chinese stealth" },
-                { id: 4, name: "F-35 Lightning II", health: 100, attack: 50, description: "Multirole fighter" },
-                { id: 5, name: "MiG-31 Foxhound", health: 140, attack: 30, description: "Interceptor" }
-            ],
-            missiles: [
-                { id: 6, name: "AIM-120 AMRAAM", damage: 60, description: "Air-to-air missile" },
-                { id: 7, name: "R-77 Adder", damage: 50, effect: "stun", description: "Russian BVR missile" },
-                { id: 8, name: "AGM-88 HARM", damage: 70, description: "Anti-radar missile" },
-                { id: 9, name: "Meteor BVRAAM", damage: 55, description: "Long-range missile" }
-            ],
-            support: [
-                { id: 10, name: "Radar Jammer", effect: "block", description: "Blocks next enemy attack" }
-            ]
+        const game = {
+            health: 10,
+            score: 0,
+            enemies: [],
+            spawnRate: 2000, // Spawn enemy every 2 seconds
+            enemySpeed: 0.05,
+
+            init: function() {
+                // Set up the 3D scene
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.camera.position.set(0, 5, 10);
+                this.camera.lookAt(0, 0, 0);
+
+                this.renderer = new THREE.WebGLRenderer();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                document.body.appendChild(this.renderer.domElement);
+
+                // Create the castle (cylinder)
+                const castleGeometry = new THREE.CylinderGeometry(1, 1, 5, 32);
+                const castleMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
+                this.castle = new THREE.Mesh(castleGeometry, castleMaterial);
+                this.scene.add(this.castle);
+
+                // Create the ground
+                const groundGeometry = new THREE.PlaneGeometry(20, 20);
+                const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                ground.rotation.x = -Math.PI / 2;
+                this.scene.add(ground);
+
+                // Add lighting
+                const light = new THREE.DirectionalLight(0xffffff, 1);
+                light.position.set(5, 10, 5);
+                this.scene.add(light);
+
+                // Initialize raycaster for mouse interaction
+                this.raycaster = new THREE.Raycaster();
+                this.mouse = new THREE.Vector2();
+
+                // Event listener for spell casting (mouse clicks)
+                window.addEventListener('click', this.onMouseClick.bind(this));
+
+                // Start spawning enemies
+                setInterval(this.spawnEnemy.bind(this), this.spawnRate);
+
+                // Start the game loop
+                this.animate();
+            },
+
+            spawnEnemy: function() {
+                // Create enemy (cube)
+                const enemyGeometry = new THREE.BoxGeometry(1, 1, 1);
+                const enemyMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+
+                // Position enemy randomly
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 10;
+                enemy.position.set(Math.cos(angle) * radius, 0.5, Math.sin(angle) * radius);
+
+                this.scene.add(enemy);
+                this.enemies.push(enemy);
+            },
+
+            update: function() {
+                // Update enemy positions
+                this.enemies.forEach((enemy, index) => {
+                    const direction = this.castle.position.clone().sub(enemy.position).normalize();
+                    enemy.position.add(direction.multiplyScalar(this.enemySpeed));
+
+                    // Check if enemy reached the castle
+                    if (enemy.position.distanceTo(this.castle.position) < 1) {
+                        this.health--;
+                        document.getElementById('health').innerText = 'Health: ' + this.health;
+                        this.scene.remove(enemy);
+                        this.enemies.splice(index, 1);
+
+                        // Check for game over
+                        if (this.health <= 0) {
+                            alert('Game Over! Final Score: ' + this.score);
+                            this.health = 0;
+                        }
+                    }
+                });
+            },
+
+            onMouseClick: function(event) {
+                // Calculate mouse position
+                this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+                // Cast ray to detect clicked enemy
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                const intersects = this.raycaster.intersectObjects(this.enemies);
+
+                if (intersects.length > 0) {
+                    const enemy = intersects[0].object;
+                    this.scene.remove(enemy);
+                    this.enemies.splice(this.enemies.indexOf(enemy), 1);
+                    this.score++;
+                    document.getElementById('score').innerText = 'Score: ' + this.score;
+                }
+            },
+
+            animate: function() {
+                requestAnimationFrame(this.animate.bind(this));
+                if (this.health > 0) {
+                    this.update();
+                }
+                this.renderer.render(this.scene, this.camera);
+            }
         };
 
-        // Game state
-        let player = {
-            hand: [
-                cards.fighters[0], cards.missiles[0], cards.fighters[1], 
-                cards.missiles[1], cards.support[0], cards.fighters[2]
-            ],
-            field: []
-        };
-        let enemy = {
-            field: [
-                { ...cards.fighters[3], health: 100 }, 
-                { ...cards.fighters[4], health: 140 }
-            ]
-        };
-
-        // Render functions
-        function renderHand() {
-            const handDiv = document.getElementById("player-hand");
-            handDiv.innerHTML = "";
-            player.hand.forEach((card, index) => {
-                const cardDiv = document.createElement("div");
-                cardDiv.className = "card";
-                cardDiv.innerText = `${card.name} ${card.health ? "(HP: " + card.health + ")" : card.damage ? "(DMG: " + card.damage + ")" : "(Support)"}`;
-                cardDiv.onclick = () => playCard(index);
-                handDiv.appendChild(cardDiv);
-            });
-        }
-
-        function renderField() {
-            const fieldDiv = document.getElementById("player-field");
-            fieldDiv.innerHTML = "";
-            player.field.forEach((card, index) => {
-                const cardDiv = document.createElement("div");
-                cardDiv.className = "card field-card";
-                cardDiv.innerText = `${card.name} (HP: ${card.health})`;
-                cardDiv.onclick = () => selectFighter(index);
-                fieldDiv.appendChild(cardDiv);
-            });
-        }
-
-        function renderEnemyField() {
-            const enemyDiv = document.getElementById("enemy-field");
-            enemyDiv.innerHTML = "";
-            enemy.field.forEach((card, index) => {
-                const cardDiv = document.createElement("div");
-                cardDiv.className = "card enemy-card";
-                cardDiv.innerText = `${card.name} (HP: ${card.health})`;
-                cardDiv.onclick = () => attackEnemy(index);
-                enemyDiv.appendChild(cardDiv);
-            });
-        }
-
-        // Game logic
-        let selectedFighter = null;
-        let selectedMissile = null;
-
-        function playCard(index) {
-            const card = player.hand[index];
-            if (card.health) { // Fighter card
-                player.field.push({ ...card });
-                player.hand.splice(index, 1);
-                updateStatus(`Deployed ${card.name}`);
-            } else if (card.damage) { // Missile card
-                if (selectedFighter === null) {
-                    updateStatus("Select a fighter first to use this missile!");
-                    return;
-                }
-                selectedMissile = card;
-                player.hand.splice(index, 1);
-                updateStatus(`Selected ${card.name}. Now choose an enemy to attack.`);
-            } else if (card.effect === "block") { // Support card
-                player.hand.splice(index, 1);
-                updateStatus("Radar Jammer activated! Next enemy attack blocked.");
-                // Simple effect: next enemy attack does 0 damage (handled in endTurn)
-            }
-            renderHand();
-            renderField();
-        }
-
-        function selectFighter(index) {
-            selectedFighter = index;
-            updateStatus(`Selected ${player.field[index].name}. Use a missile or attack an enemy.`);
-        }
-
-        function attackEnemy(enemyIndex) {
-            if (selectedFighter === null) {
-                updateStatus("Select a fighter first!");
-                return;
-            }
-            const fighter = player.field[selectedFighter];
-            const enemyFighter = enemy.field[enemyIndex];
-            let damage = selectedMissile ? selectedMissile.damage : fighter.attack;
-            let message = `${fighter.name} attacked ${enemyFighter.name}`;
-
-            if (selectedMissile) {
-                message += ` with ${selectedMissile.name} for ${damage} damage!`;
-                if (selectedMissile.effect === "stun") {
-                    message += " Enemy is stunned!";
-                    // Stun effect could skip enemy's next turn, but simplified here
-                }
-                selectedMissile = null;
-            } else {
-                message += ` for ${damage} damage!`;
-            }
-
-            enemyFighter.health -= damage;
-            updateStatus(message);
-            if (enemyFighter.health <= 0) {
-                enemy.field.splice(enemyIndex, 1);
-                updateStatus(`${enemyFighter.name} was destroyed!`);
-            }
-            selectedFighter = null;
-            renderEnemyField();
-            checkWin();
-        }
-
-        let blockNextAttack = false;
-        function endTurn() {
-            if (enemy.field.length > 0 && player.field.length > 0) {
-                const enemyFighter = enemy.field[0];
-                const playerFighter = player.field[0];
-                let damage = blockNextAttack ? 0 : enemyFighter.attack;
-                playerFighter.health -= damage;
-                updateStatus(`Enemy ${enemyFighter.name} attacked your ${playerFighter.name} for ${damage} damage!`);
-                if (playerFighter.health <= 0) {
-                    player.field.splice(0, 1);
-                    updateStatus(`Your ${playerFighter.name} was destroyed!`);
-                }
-                blockNextAttack = false; // Reset block after use
-                renderField();
-            }
-            checkWin();
-        }
-
-        function checkWin() {
-            if (enemy.field.length === 0) {
-                updateStatus("You win! All enemy fighters destroyed.");
-            } else if (player.field.length === 0 && player.hand.every(card => !card.health)) {
-                updateStatus("You lose! No fighters left.");
-            }
-        }
-
-        function updateStatus(message) {
-            document.getElementById("status").innerText = message;
-        }
-
-        // Initial render
-        renderHand();
-        renderField();
-        renderEnemyField();
-        updateStatus("Deploy a fighter or use a missile to attack!");
+        // Start the game
+        game.init();
     </script>
 </body>
 </html>
