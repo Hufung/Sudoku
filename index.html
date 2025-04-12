@@ -341,7 +341,7 @@
             animate: function() {
                 const delta = 1 / 60;
                 requestAnimationFrame(this.animate.bind(this));
-                if                if (this.health > 0) {
+                if (this.health > 0) {
                     this.update(delta);
                 }
                 this.renderer.render(this.scene, this.camera);
