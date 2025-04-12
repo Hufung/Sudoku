@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Magic FPS Survival Game</title>
+    <title>3D Magic FPS Survival Game with Wand</title>
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
@@ -49,6 +49,11 @@
             spawnRate: 10000,
             enemySpeed: 0.08,
             enemiesPerWave: 5,
+            spawnPoints: [
+                new THREE.Vector3(15, 0.5, 0), // Right
+                new THREE.Vector3(-7.5, 0.5, 13), // Left-front
+                new THREE.Vector3(-7.5, 0.5, -13) // Left-back
+            ],
             player: {
                 position: new THREE.Vector3(0, 1, 0),
                 velocity: new THREE.Vector3(),
@@ -71,18 +76,39 @@
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 document.body.appendChild(this.renderer.domElement);
 
+                // Ground
                 const groundGeometry = new THREE.PlaneGeometry(50, 50);
                 const groundMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
                 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
                 ground.rotation.x = -Math.PI / 2;
                 this.scene.add(ground);
 
+                // Lighting
                 const light = new THREE.DirectionalLight(0xffffff, 0.8);
                 light.position.set(5, 10, 5);
                 this.scene.add(light);
                 const ambient = new THREE.AmbientLight(0x404040);
                 this.scene.add(ambient);
 
+                // Magic wand
+                const wandHandleGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.4, 16);
+                const wandHandleMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 }); // Brown
+                const wandHandle = new THREE.Mesh(wandHandleGeometry, wandHandleMaterial);
+
+                const wandTipGeometry = new THREE.SphereGeometry(0.07, 16, 16);
+                const wandTipMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+                const wandTip = new THREE.Mesh(wandTipGeometry, wandTipMaterial);
+                wandTip.position.y = 0.25; // Tip above handle
+
+                this.wand = new THREE.Group();
+                this.wand.add(wandHandle);
+                this.wand.add(wandTip);
+                this.wand.position.set(0.3, -0.3, -0.5); // Right, down, forward in camera view
+                this.wand.rotation.x = Math.PI / 4; // Slight tilt
+                this.camera.add(this.wand); // Attach to camera
+                this.scene.add(this.camera);
+
+                // Event listeners
                 window.addEventListener('click', this.onMouseClick.bind(this));
                 window.addEventListener('mousemove', this.onMouseMove.bind(this));
                 window.addEventListener('keydown', (e) => {
@@ -119,23 +145,28 @@
                 }
             },
 
-            spawnEnemy: function() {
+            spawnEnemy: function(spawnIndex) {
                 const enemyGeometry = new THREE.BoxGeometry(1, 1, 1);
                 const enemyMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
                 const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
 
-                const angle = Math.random() * Math.PI * 2;
-                const radius = 15;
-                enemy.position.set(Math.cos(angle) * radius, 0.5, Math.sin(angle) * radius);
+                enemy.position.copy(this.spawnPoints[spawnIndex]);
 
                 this.scene.add(enemy);
                 this.enemies.push(enemy);
             },
 
             spawnWave: function() {
-                for (let i = 0; i < this.enemiesPerWave; i++) {
-                    this.spawnEnemy();
+                const enemiesPerPoint = Math.ceil(this.enemiesPerWave / this.spawnPoints.length);
+                let enemiesSpawned = 0;
+
+                for (let i = 0; i < this.spawnPoints.length && enemiesSpawned < this.enemiesPerWave; i++) {
+                    for (let j = 0; j < enemiesPerPoint && enemiesSpawned < this.enemiesPerWave; j++) {
+                        this.spawnEnemy(i);
+                        enemiesSpawned++;
+                    }
                 }
+
                 this.enemiesPerWave += 2;
                 this.wave++;
                 document.getElementById('wave').innerText = 'Wave: ' + this.wave;
@@ -183,7 +214,13 @@
                 const geometry = new THREE.SphereGeometry(0.1, 16, 16);
                 const material = new THREE.MeshBasicMaterial({ color: 0x00ffff });
                 const projectile = new THREE.Mesh(geometry, material);
-                projectile.position.copy(this.player.position);
+
+                // Start from wand tip
+                const wandTipWorldPos = new THREE.Vector3();
+                this.wand.getWorldPosition(wandTipWorldPos);
+                const wandTipLocal = this.wand.children[1].position; // Tip sphere
+                wandTipWorldPos.add(wandTipLocal.clone().applyQuaternion(this.wand.getWorldQuaternion()));
+                projectile.position.copy(wandTipWorldPos);
 
                 const direction = new THREE.Vector3();
                 this.camera.getWorldDirection(direction);
