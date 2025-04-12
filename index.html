@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Magic FPS Survival Game with Wand</title>
+    <title>3D Magic FPS Survival Game with AOE</title>
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
@@ -33,7 +33,7 @@
         <div id="health">Health: 10</div>
         <div id="score">Score: 0</div>
         <div id="wave">Wave: 1</div>
-        <div>Controls: WASD to move, Mouse to aim, Click to cast spell, Space to jump</div>
+        <div>Controls: WASD to move, Mouse to aim, Click to cast AOE spell, Space to jump</div>
     </div>
     <div id="crosshair"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -49,10 +49,11 @@
             spawnRate: 10000,
             enemySpeed: 0.08,
             enemiesPerWave: 5,
+            aoeRadius: 3,
             spawnPoints: [
-                new THREE.Vector3(15, 0.5, 0), // Right
-                new THREE.Vector3(-7.5, 0.5, 13), // Left-front
-                new THREE.Vector3(-7.5, 0.5, -13) // Left-back
+                new THREE.Vector3(15, 0.5, 0),
+                new THREE.Vector3(-7.5, 0.5, 13),
+                new THREE.Vector3(-7.5, 0.5, -13)
             ],
             player: {
                 position: new THREE.Vector3(0, 1, 0),
@@ -76,39 +77,35 @@
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 document.body.appendChild(this.renderer.domElement);
 
-                // Ground
                 const groundGeometry = new THREE.PlaneGeometry(50, 50);
                 const groundMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
                 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
                 ground.rotation.x = -Math.PI / 2;
                 this.scene.add(ground);
 
-                // Lighting
                 const light = new THREE.DirectionalLight(0xffffff, 0.8);
                 light.position.set(5, 10, 5);
                 this.scene.add(light);
                 const ambient = new THREE.AmbientLight(0x404040);
                 this.scene.add(ambient);
 
-                // Magic wand
                 const wandHandleGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.4, 16);
-                const wandHandleMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 }); // Brown
+                const wandHandleMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
                 const wandHandle = new THREE.Mesh(wandHandleGeometry, wandHandleMaterial);
 
                 const wandTipGeometry = new THREE.SphereGeometry(0.07, 16, 16);
                 const wandTipMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
                 const wandTip = new THREE.Mesh(wandTipGeometry, wandTipMaterial);
-                wandTip.position.y = 0.25; // Tip above handle
+                wandTip.position.y = 0.25;
 
                 this.wand = new THREE.Group();
                 this.wand.add(wandHandle);
                 this.wand.add(wandTip);
-                this.wand.position.set(0.3, -0.3, -0.5); // Right, down, forward in camera view
-                this.wand.rotation.x = Math.PI / 4; // Slight tilt
-                this.camera.add(this.wand); // Attach to camera
+                this.wand.position.set(0.3, -0.3, -0.5);
+                this.wand.rotation.x = Math.PI / 4;
+                this.camera.add(this.wand);
                 this.scene.add(this.camera);
 
-                // Event listeners
                 window.addEventListener('click', this.onMouseClick.bind(this));
                 window.addEventListener('mousemove', this.onMouseMove.bind(this));
                 window.addEventListener('keydown', (e) => {
@@ -186,9 +183,9 @@
                 for (let i = 0; i < count; i++) {
                     positions.push(position.x, position.y, position.z);
                     velocities.push(
-                        (Math.random() - 0.5) * 0.1,
-                        (Math.random() - 0.5) * 0.1 + 0.05,
-                        (Math.random() - 0.5) * 0.1
+                        (Math.random() - 0.5) * 0.15,
+                        (Math.random() - 0.5) * 0.15 + 0.05,
+                        (Math.random() - 0.5) * 0.15
                     );
                 }
 
@@ -204,7 +201,7 @@
 
                 const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
                 particleSystem.lifetime = 1;
-                particleSystem.age = 0;
+                system.age = 0;
                 this.scene.add(particleSystem);
                 this.particles.push(particleSystem);
                 return particleSystem;
@@ -215,10 +212,9 @@
                 const material = new THREE.MeshBasicMaterial({ color: 0x00ffff });
                 const projectile = new THREE.Mesh(geometry, material);
 
-                // Start from wand tip
                 const wandTipWorldPos = new THREE.Vector3();
                 this.wand.getWorldPosition(wandTipWorldPos);
-                const wandTipLocal = this.wand.children[1].position; // Tip sphere
+                const wandTipLocal = this.wand.children[1].position;
                 wandTipWorldPos.add(wandTipLocal.clone().applyQuaternion(this.wand.getWorldQuaternion()));
                 projectile.position.copy(wandTipWorldPos);
 
@@ -230,7 +226,6 @@
                 projectile.material.emissiveIntensity = 0.5;
                 projectile.pulsePhase = Math.random() * Math.PI;
 
-                // Line trail
                 const trailGeometry = new THREE.BufferGeometry();
                 const trailPositions = [];
                 trailGeometry.setAttribute('position', new THREE.Float32BufferAttribute(trailPositions, 3));
@@ -292,24 +287,46 @@
                     projectile.trail.geometry.setAttribute('position', new THREE.Float32BufferAttribute(projectile.trailPositions, 3));
                     projectile.trail.geometry.attributes.position.needsUpdate = true;
 
+                    let hit = false;
                     this.enemies.forEach((enemy, eIndex) => {
                         if (projectile.position.distanceTo(enemy.position) < 0.5) {
-                            this.createParticleSystem(enemy.position, 0xffff00, 30, 0.25);
-                            this.createParticleSystem(enemy.position, 0x00ffff, 20, 0.15);
-                            const flash = new THREE.PointLight(0x00ffff, 1, 5);
-                            flash.position.copy(enemy.position);
+                            hit = true;
+                            const impactPos = projectile.position.clone();
+                            const enemiesToRemove = [];
+
+                            // AOE damage
+                            this.enemies.forEach((aoeEnemy, aoeIndex) => {
+                                if (impactPos.distanceTo(aoeEnemy.position) < this.aoeRadius) {
+                                    enemiesToRemove.push(aoeIndex);
+                                    this.createParticleSystem(aoeEnemy.position, 0xffff00, 40, 0.3);
+                                    this.createParticleSystem(aoeEnemy.position, 0x00ffff, 30, 0.2);
+                                    this.score++;
+                                    document.getElementById('score').innerText = 'Score: ' + this.score;
+                                }
+                            });
+
+                            // Remove affected enemies
+                            enemiesToRemove.sort((a, b) => b - a).forEach(index => {
+                                this.scene.remove(this.enemies[index]);
+                                this.enemies.splice(index, 1);
+                            });
+
+                            // AOE impact effects at center
+                            this.createParticleSystem(impactPos, 0xffff00, 50, 0.4);
+                            this.createParticleSystem(impactPos, 0x00ffff, 40, 0.25);
+                            const flash = new THREE.PointLight(0x00ffff, 2, 8);
+                            flash.position.copy(impactPos);
                             this.scene.add(flash);
-                            setTimeout(() => this.scene.remove(flash), 100);
-                            this.scene.remove(enemy);
-                            this.scene.remove(projectile);
-                            this.scene.remove(projectile.trail);
-                            this.enemies.splice(eIndex, 1);
-                            this.projectiles.splice(pIndex, 1);
-                            this.trails.splice(this.trails.indexOf(projectile.trail), 1);
-                            this.score++;
-                            document.getElementById('score').innerText = 'Score: ' + this.score;
+                            setTimeout(() => this.scene.remove(flash), 150);
                         }
                     });
+
+                    if (hit) {
+                        this.scene.remove(projectile);
+                        this.scene.remove(projectile.trail);
+                        this.projectiles.splice(pIndex, 1);
+                        this.trails.splice(this.trails.indexOf(projectile.trail), 1);
+                    }
 
                     if (projectile.position.length() > 20) {
                         this.scene.remove(projectile);
